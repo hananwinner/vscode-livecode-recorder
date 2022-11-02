@@ -71,7 +71,7 @@ export async function activate(context: vscode.ExtensionContext) {
         case 'Copy': vscode.env.clipboard.writeText(file); break;
         case 'Delete': await fs.unlink(file); break;
       }
-    } catch (e) {
+    } catch (e: any) {
       vscode.window.showErrorMessage(e.message);
       if (!recorder.active) {
         status.stop();
