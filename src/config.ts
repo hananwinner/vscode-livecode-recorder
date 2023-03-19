@@ -7,6 +7,7 @@ import { RecordingOptions } from './types';
 import { OSUtil } from '@arcsine/screen-recorder/lib/os';
 import { DownloadUtil } from '@arcsine/screen-recorder';
 import { Util } from './util';
+import axios from 'axios';
 
 const exists = util.promisify(fs.exists);
 const home = process.env.HOME || process.env.USERPROFILE;
@@ -39,7 +40,7 @@ export class Config {
       fps: 10,
       animatedGif: false,
       countdown: 5,
-      flags: {},
+      flags: {},      
       ...(this._config.get('chronicler.recording-defaults') || {})
     } as RecordingOptions;
   }
@@ -209,7 +210,59 @@ export class Config {
     }
   }
 
+  static async getLivecodeToken() {
+    if (this.hasConfig('livecode-token')) {
+      return this.getConfig('livecode-token') as string;
+    }    
+
+    let username;
+    let password;
+    if (this.hasConfig('livecode-username')) {
+      username = this.getConfig('livecode-username');
+      password = this.getConfig('livecode-password');
+    } else {
+      username = await vscode.window.showInputBox({ placeHolder: 'Username' });
+      if (username === undefined) {
+        throw new Error('username not specified');
+      } else {
+        await this.setConfig('livecode-username', username)
+      }
+      password = await vscode.window.showInputBox({ placeHolder: 'Password' });
+      if (password === undefined) {
+        throw new Error('password not specified');
+      } else {
+        await this.setConfig('livecode-password', password)
+      }
+
+    }
+    
+    const url = `${this.getLivecodeBEUrl()}/users/token/`;
+
+    let token = '';
+
+    await axios
+      .post(url, {"username": username, "password": password})
+      .then(response => {
+        if (response.status === 200 && response.data.token) {
+          token = response.data.token;
+          console.log(`Got token: ${token}`);
+        } else {
+          console.log('Unexpected response:', response);
+        }
+      })
+      .catch((error) => {
+        console.log('Error:', error.message);
+      });
+    
+    await this.setConfig('livecode-token', token);
+    return this.getConfig('livecode-token');
+  }
+
   static getAutoRecordLiveShare() {
     return this.getConfig('auto-record-live-share');
+  }
+
+  static getLivecodeBEUrl() {
+    return this.getConfig('livecode-be-url');
   }
 }

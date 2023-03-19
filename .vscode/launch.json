@@ -20,9 +20,9 @@
       },
       "stopOnEntry": false,
       "sourceMaps": true,
-      "outFiles": [
-        "${workspaceRoot}/out/src/**/*.js"
-      ],
+      // "outFiles": [
+      //   "${workspaceRoot}/out/src/**/*.js"
+      // ],
       "preLaunchTask": "npm",
       "skipFiles": [
         "<node_internals>/**",
@@ -49,6 +49,17 @@
         "${workspaceRoot}/out/test/**/*.js"
       ],
       "preLaunchTask": "npm"
+    },
+    {
+      "name": "Jest Tests",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/jest/bin/jest",
+      "args": ["--runInBand"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "internalConsoleOptions": "neverOpen",
+      "env": { "NODE_ENV": "test" }
     }
   ]
 }

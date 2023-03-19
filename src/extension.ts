@@ -10,6 +10,12 @@ import { RecordingStatus } from './status';
 import { Util } from './util';
 import { RecordingOptions } from './types';
 import { Config } from './config';
+import { logger } from './logger';
+import { CodeChangeRecorder } from './codeChangeRecorder';
+import axios from 'axios';
+import { Artifact } from './models';
+
+
 
 export async function activate(context: vscode.ExtensionContext) {
 
@@ -17,6 +23,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const recorder = new Recorder();
   const status = new RecordingStatus();
+  const codeChangeRecorder = new CodeChangeRecorder();
+
 
   async function stop() {
     await new Promise(resolve => setTimeout(resolve, 125)); // Allows for click to be handled properly
@@ -42,6 +50,13 @@ export async function activate(context: vscode.ExtensionContext) {
       return;
     }
 
+    const livecodeToken = await Config.getLivecodeToken();
+    if (!livecodeToken) {
+      vscode.window.showWarningMessage('Cannot record without logging in to Livecode');
+      return;
+    }
+    
+
     try {
       await status.countDown();
     } catch (err) {
@@ -52,6 +67,33 @@ export async function activate(context: vscode.ExtensionContext) {
     return true;
   }
 
+  async function createLiveCode(name?: string) : 
+  Promise<{ livecodeId: string; remote_uri: string; autocommit_branch: string; livecodeName: string; }> {
+    let livecodeId: string, remote_uri: string, autocommit_branch: string , livecodeName: string;
+    const url = `${Config.getLivecodeBEUrl()}/livecodes/`;    
+    const payload = name? {"name": name} : {};
+    await axios
+      .post(url, payload)
+      .then(response => {
+        if (response.status === 200) {                  
+          livecodeId = response.data.id;
+          livecodeName = response.data.id;
+          remote_uri = response.data.git.remote_uri;
+          autocommit_branch = response.data.git.autocommit_branch;
+          return {livecodeId: livecodeId, remote_uri: remote_uri, autocommit_branch: autocommit_branch, livecodeName: livecodeName};
+        }
+      })
+
+    throw new Error('Failed to create Livecode');            
+  }
+
+  async function finalize(artifacts: Artifact[]) {
+    const givenLivecodeName = await vscode.window.showInputBox({ placeHolder: 'Livecode Name' });
+    const { livecodeId, remote_uri, autocommit_branch, livecodeName } = await createLiveCode(givenLivecodeName);
+    commitRecorder.push(autocommit_branch, remote_uri);
+    artifactUploader.upload(livecodeId, livecodeName, artifacts);
+  }
+
   async function record(opts: Partial<RecordingOptions> = {}) {
     try {
       if (!(await initRecording())) {
@@ -60,9 +102,25 @@ export async function activate(context: vscode.ExtensionContext) {
 
       const run = await recorder.run(opts);
       status.start();
+      codeChangeRecorder.start();
+
 
       const { file } = await run.output();
       status.stop();
+      codeChangeRecorder.stop();
+
+      const choice0 = await vscode.window.showInformationMessage(`Livecode Recording Finished Succesfully`, 'OK', 'Delete');
+      switch (choice0) {
+        case 'OK': {
+
+          break;
+        };
+        case 'Delete': {
+          await fs.unlink(file);
+          break;
+        };
+      }
+
 
       const choice = await vscode.window.showInformationMessage(`Session output ${file}`, 'View', 'Copy', 'Delete', 'Folder');
       switch (choice) {
@@ -111,6 +169,8 @@ export async function activate(context: vscode.ExtensionContext) {
   });
 
   context.subscriptions.push(recorder, status);
+  context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(event => codeChangeRecorder.handleCodeChange(event)));
+
 
   initializeLiveShare();
 }
