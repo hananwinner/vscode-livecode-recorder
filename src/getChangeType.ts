@@ -44,12 +44,12 @@ export function getChangeTypeInternal(
             return CodeChangeType.automaticRefactoring;
         }
 
-        if (eventReason === vscode.TextDocumentChangeReason.Undo.toString()) {
+        if (eventReason === "Undo") {
             logger.debug('undo');
             return CodeChangeType.undo;
         } 
         
-        if (eventReason === vscode.TextDocumentChangeReason.Redo.toString()) {
+        if (eventReason === "Redo") {
             logger.debug('redo');
             return CodeChangeType.redo;
         }

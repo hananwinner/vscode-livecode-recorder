@@ -90,8 +90,8 @@ export async function activate(context: vscode.ExtensionContext) {
   async function finalize(artifacts: Artifact[]) {
     const givenLivecodeName = await vscode.window.showInputBox({ placeHolder: 'Livecode Name' });
     const { livecodeId, remote_uri, autocommit_branch, livecodeName } = await createLiveCode(givenLivecodeName);
-    commitRecorder.push(autocommit_branch, remote_uri);
-    artifactUploader.upload(livecodeId, livecodeName, artifacts);
+    // commitRecorder.push(autocommit_branch, remote_uri);
+    // artifactUploader.upload(livecodeId, livecodeName, artifacts);
   }
 
   async function record(opts: Partial<RecordingOptions> = {}) {

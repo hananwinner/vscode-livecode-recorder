@@ -3,7 +3,7 @@ import { Config } from './config';
 import { v4 as uuidv4 } from 'uuid';
 import { CodeChangeType } from './enums';
 import { getChangeTypeInternal, getChangeType, ChangeTypeInternalInput, ChangeTypeInternalInputResult} from './getChangeType';
-import { CodeChangeAttributes, CodeChangeEvent } from './models';
+import { CodeChangeAttributes } from './models';
 import { logger } from './logger';
 import { createObjectCsvWriter } from 'csv-writer';
 

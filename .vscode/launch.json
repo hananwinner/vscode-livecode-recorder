@@ -58,8 +58,12 @@
       "args": ["--runInBand"],
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}",
-      "internalConsoleOptions": "neverOpen",
-      "env": { "NODE_ENV": "test" }
+      "internalConsoleOptions": "neverOpen",      
+      "env": { "NODE_ENV": "test" },      
+      "outFiles": [
+        "${workspaceRoot}/out/test/**/*.js"
+      ],
+      "preLaunchTask": "npm"
     }
   ]
 }
