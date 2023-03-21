@@ -22,7 +22,7 @@
         "NODE_PRESERVE_SYMLINKS": "1"
       },      
       "sourceMaps": true,      
-      "preLaunchTask": "${defaultBuildTask}",
+      "preLaunchTask": "npm",
       "skipFiles": [
         "<node_internals>/**",
         "**/@travetto/context/**/*",
@@ -46,22 +46,7 @@
       "outFiles": [
         "${workspaceRoot}/out/test/**/*.js"
       ],
-      "preLaunchTask": "${defaultBuildTask}",
-    },
-    {
-      "name": "Jest Tests",
-      "type": "node",
-      "request": "launch",
-      "program": "${workspaceFolder}/node_modules/jest/bin/jest",
-      "args": ["--runInBand"],
-      "console": "integratedTerminal",
-      "cwd": "${workspaceFolder}",
-      "internalConsoleOptions": "neverOpen",      
-      "env": { "NODE_ENV": "test" },      
-      "outFiles": [
-        "${workspaceRoot}/out/test/**/*.js"
-      ],
-      "preLaunchTask": "${defaultBuildTask}",
+      "preLaunchTask": "npm",
     }
   ]
 }

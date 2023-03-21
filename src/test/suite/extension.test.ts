@@ -5,11 +5,21 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 // import * as myExtension from '../../extension';
 
+import { ArtifactUploader } from "../../artifactUploader";
+import { Artifact } from "../../models";
+
 suite('Extension Test Suite', () => {
 	vscode.window.showInformationMessage('Start all tests.');
 
-	test('Sample test', () => {
-		assert.strictEqual(-1, [1, 2, 3].indexOf(5));
-		assert.strictEqual(-1, [1, 2, 3].indexOf(0));
+	// test('Sample test', () => {
+	// 	assert.strictEqual(-1, [1, 2, 3].indexOf(5));
+	// 	assert.strictEqual(-1, [1, 2, 3].indexOf(0));
+	// });
+
+	test("upload file", async () => {
+		const artifactUploader = new ArtifactUploader();
+		const artifacts : Artifact[] = [];    
+		artifacts.push(new Artifact("txt", "1.txt", "1.txt"));
+		artifactUploader.upload("aaa5", "hello", artifacts);
 	});
 });
