@@ -39,14 +39,29 @@
       "request": "launch",
       "runtimeExecutable": "${execPath}",
       "args": [
-        "--extensionDevelopmentPath=${workspaceRoot}",
-        "--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
-      ],      
-      "sourceMaps": true,
+        "--extensionDevelopmentPath=${workspaceRoot}",        
+        "--extensionTestsPath=${workspaceFolder}/out/test/suite/index",
+        "${workspaceRoot}/../travetto/module/rest-express"
+      ],    
       "outFiles": [
         "${workspaceRoot}/out/test/**/*.js"
       ],
+      "env": {
+        "DEBUG": "1",
+        "NODE_PRESERVE_SYMLINKS": "1"
+      },  
+      "sourceMaps": true,
+      
       "preLaunchTask": "npm",
+      "skipFiles": [
+        "<node_internals>/**",
+        "**/@travetto/context/**/*",
+        "**/@travetto/base/**/stacktrace.*",
+        "**/@travetto/compiler/**/proxy.*",
+        "**/node_modules/cls-hooked/**/*",
+        "**/node_modules/trace/**/*",
+        "**/node_modules/stack-chain/**/*"
+      ]
     }
   ]
 }

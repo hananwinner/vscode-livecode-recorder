@@ -19,7 +19,7 @@ suite('Extension Test Suite', () => {
 	test("upload file", async () => {
 		const artifactUploader = new ArtifactUploader();
 		const artifacts : Artifact[] = [];    
-		artifacts.push(new Artifact("txt", "1.txt", "1.txt"));
-		artifactUploader.upload("aaa5", "hello", artifacts);
+		artifacts.push(new Artifact("log", "1.log", "1.log"));
+		await artifactUploader.upload("aaa5", "hello", artifacts);
 	});
 });
