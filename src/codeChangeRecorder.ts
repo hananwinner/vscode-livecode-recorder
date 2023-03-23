@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import { Config } from './config';
 import { v4 as uuidv4 } from 'uuid';
-import { CodeChangeType } from './enums';
+import { ArtifactType, CodeChangeType } from './enums';
 import { getChangeTypeInternal, getChangeType, ChangeTypeInternalInput, ChangeTypeInternalInputResult} from './getChangeType';
-import { CodeChangeAttributes } from './models';
+import { Artifact, CodeChangeAttributes } from './models';
 import { logger } from './logger';
 import { createObjectCsvWriter } from 'csv-writer';
 
@@ -13,44 +13,37 @@ export class CodeChangeRecorder {
   private isRecording = false;
   private changeAttributesList: any[] = [];
 
-  start() {
-    this.isRecording = true;
+  init() {
+    this.changeAttributesList = [];
   }
 
-  stop(livecode_id?: string) {    
+  start() {    
+    this.isRecording = true;      
+  }
+
+  stop() {    
     this.isRecording = false;
+  }
 
-    //const fileTs = new Date().getTime();
-    //const fileName = `events.json`;
-    
-    // fs.writeFile(fileName, JSON.stringify(changesList, null, 2), err => {
-    //     if (err) {
-    //       console.error(err);
-    //     } else {
-    //       console.log('saved to file');
-    //     }
-    // });
-    // changesList = [];
+  async output(livecode_id: string) : Promise<Artifact>{
+    const header = [
+        { id: 'time', title: 'time' },
+        { id: 'textLength', title: 'textLength' },
+        { id: 'type', title: 'type' },
+        { id: 'startLine', title: 'startLine' },
+        { id: 'endLine', title: 'endLine' }
+      ];
 
-    if (livecode_id !== undefined) {
-        const header = [
-            { id: 'time', title: 'time' },
-            { id: 'textLength', title: 'textLength' },
-            { id: 'type', title: 'type' },
-            { id: 'startLine', title: 'startLine' },
-            { id: 'endLine', title: 'endLine' }
-          ];
-    
-          const csvWriter = createObjectCsvWriter({
-            path: `${livecode_id}.cca.csv`,
-            header: header
-          });
-    
-          csvWriter.writeRecords(this.changeAttributesList)
-              .then(() => console.log('The CSV file was written successfully.'));
-    }
+      const path = `${livecode_id}.cca.csv`;
 
-    this.changeAttributesList = [];
+      const csvWriter = createObjectCsvWriter({
+        path: path,
+        header: header
+      });
+
+      await csvWriter.writeRecords(this.changeAttributesList);
+      
+      return new Artifact(ArtifactType.codeChangesAttributes, path, path);
   }
 
   handleCodeChange(event: vscode.TextDocumentChangeEvent) { //TODO - add file path

@@ -265,4 +265,8 @@ export class Config {
   static getLivecodeBEUrl() {
     return this.getConfig('livecode-be-url');
   }
+
+  static getAutocommitInterval() {
+    return this.getConfig('autocommit-interval');
+  }
 }

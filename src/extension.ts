@@ -2,8 +2,6 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { promises as fs } from 'fs';
 
-import { OSUtil } from '@arcsine/screen-recorder/lib/os';
-
 import { Recorder } from './recorder';
 import { RecordingStatus } from './status';
 
@@ -12,9 +10,12 @@ import { RecordingOptions } from './types';
 import { Config } from './config';
 import { logger } from './logger';
 import { CodeChangeRecorder } from './codeChangeRecorder';
-import axios from 'axios';
 import { Artifact } from './models';
-
+import { ArtifactType } from './enums';
+import { ArtifactUploader } from './artifactUploader';
+import { CommitRecorder } from './commitRecorder';
+import * as cron from 'node-cron';
+import { createLiveCode } from './livecodeApiClient';
 
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -24,19 +25,29 @@ export async function activate(context: vscode.ExtensionContext) {
   const recorder = new Recorder();
   const status = new RecordingStatus();
   const codeChangeRecorder = new CodeChangeRecorder();
+  const uploader = new ArtifactUploader();
+  const commitRecorder = new CommitRecorder();
 
+  let autocommitJob: cron.ScheduledTask | undefined;
+
+  function init_job() {
+    if ( autocommitJob == undefined) {
+      const cronIntervalSetting = `*/${Config.getAutocommitInterval()} * * * * *`;
+      logger.debug(cronIntervalSetting);
+      autocommitJob = cron.schedule(cronIntervalSetting, () => {
+        commitRecorder.makeAutocommit();
+      });
+    }
+  }
 
   async function stop() {
     await new Promise(resolve => setTimeout(resolve, 125)); // Allows for click to be handled properly
     if (status.counting) {
       status.stop();
-    } else if (recorder.active) {
-      status.stopping();
-      recorder.stop();
-    } else if (recorder.running) {
+    } else if (recorder.active) {      
       status.stop();
-      recorder.stop(true);
-    }
+      recorder.stop();  // this will result in stopping the rest of recording components   
+    } 
   }
 
   async function initRecording() {
@@ -55,7 +66,6 @@ export async function activate(context: vscode.ExtensionContext) {
       vscode.window.showWarningMessage('Cannot record without logging in to Livecode');
       return;
     }
-    
 
     try {
       await status.countDown();
@@ -67,52 +77,57 @@ export async function activate(context: vscode.ExtensionContext) {
     return true;
   }
 
-  async function createLiveCode(name?: string) : 
-  Promise<{ livecodeId: string; remote_uri: string; autocommit_branch: string; livecodeName: string; }> {
-    let livecodeId: string, remote_uri: string, autocommit_branch: string , livecodeName: string;
-    const url = `${Config.getLivecodeBEUrl()}/livecodes/`;    
-    const payload = name? {"name": name} : {};
-    await axios
-      .post(url, payload)
-      .then(response => {
-        if (response.status === 200) {                  
-          livecodeId = response.data.id;
-          livecodeName = response.data.id;
-          remote_uri = response.data.git.remote_uri;
-          autocommit_branch = response.data.git.autocommit_branch;
-          return {livecodeId: livecodeId, remote_uri: remote_uri, autocommit_branch: autocommit_branch, livecodeName: livecodeName};
-        }
-      })
-
-    throw new Error('Failed to create Livecode');            
-  }
-
-  async function finalize(artifacts: Artifact[]) {
-    const givenLivecodeName = await vscode.window.showInputBox({ placeHolder: 'Livecode Name' });
-    const { livecodeId, remote_uri, autocommit_branch, livecodeName } = await createLiveCode(givenLivecodeName);
-    // commitRecorder.push(autocommit_branch, remote_uri);
-    // artifactUploader.upload(livecodeId, livecodeName, artifacts);
-  }
+  
 
   async function record(opts: Partial<RecordingOptions> = {}) {
     try {
       if (!(await initRecording())) {
         return;
       }
+      codeChangeRecorder.init();
+      await commitRecorder.init();
+      init_job();
 
-      const run = await recorder.run(opts);
+      //starts the recording, the run.output is used to wait for completion and get the output.
+      const run = await recorder.run(opts); 
+
+      // activate the rest of recording componenets: autocmmit, code-change recorder
       status.start();
       codeChangeRecorder.start();
-
-
+      commitRecorder.start();
+      if (autocommitJob !== undefined) {
+        autocommitJob.start();
+      }
+      
+      // wait for completion (usually triggered by stop)
       const { file } = await run.output();
-      status.stop();
+      status.stop();  // should be stopped in most cases, but its ok to call stop() again.
+      
+
+      if (autocommitJob !== undefined) {
+        autocommitJob.stop();
+      }
+      commitRecorder.stop()
+      
       codeChangeRecorder.stop();
+      commitRecorder.stop()
 
       const choice0 = await vscode.window.showInformationMessage(`Livecode Recording Finished Succesfully`, 'OK', 'Delete');
       switch (choice0) {
-        case 'OK': {
+        case 'OK': {          
+          const givenLivecodeName =
+          
+          await vscode.window.showInputBox({ placeHolder: 'Livecode Name' });
+          const { livecodeId, remote_uri, autocommit_branch, livecodeName } = await createLiveCode(givenLivecodeName);
+          const ccnga = await codeChangeRecorder.output(livecodeId);
+          
+          //preparing artifacts metadata
+          const video = new Artifact(ArtifactType.video, file, path.basename(file));
+          const artifacts = [video];      
+          artifacts.push(ccnga);
 
+          commitRecorder.push(remote_uri);
+          await uploader.upload(livecodeId, livecodeName, artifacts);          
           break;
         };
         case 'Delete': {
@@ -120,15 +135,7 @@ export async function activate(context: vscode.ExtensionContext) {
           break;
         };
       }
-
-
-      const choice = await vscode.window.showInformationMessage(`Session output ${file}`, 'View', 'Copy', 'Delete', 'Folder');
-      switch (choice) {
-        case 'View': await OSUtil.openFile(file); break;
-        case 'Folder': await OSUtil.openFile(path.dirname(file)); break;
-        case 'Copy': vscode.env.clipboard.writeText(file); break;
-        case 'Delete': await fs.unlink(file); break;
-      }
+      
     } catch (e: any) {
       vscode.window.showErrorMessage(e.message);
       if (!recorder.active) {
@@ -167,7 +174,6 @@ export async function activate(context: vscode.ExtensionContext) {
       record({ duration: parseInt(time, 10) });
     }
   });
-
   context.subscriptions.push(recorder, status);
   context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(event => codeChangeRecorder.handleCodeChange(event)));
 
