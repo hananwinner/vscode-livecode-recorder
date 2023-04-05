@@ -6,7 +6,9 @@ import { getChangeTypeInternal, getChangeType, ChangeTypeInternalInput, ChangeTy
 import { Artifact, CodeChangeAttributes } from './models';
 import { logger } from './logger';
 import { createObjectCsvWriter } from 'csv-writer';
-
+import * as fs from 'fs';
+import * as os from 'os';
+import path = require('path');
 
 
 export class CodeChangeRecorder {
@@ -34,16 +36,17 @@ export class CodeChangeRecorder {
         { id: 'endLine', title: 'endLine' }
       ];
 
-      const path = `${livecode_id}.cca.csv`;
+      const filename = `${livecode_id}.cca.csv`;
+      const outputPath = path.join(os.tmpdir(), filename);      
 
       const csvWriter = createObjectCsvWriter({
-        path: path,
+        path: outputPath,
         header: header
       });
 
       await csvWriter.writeRecords(this.changeAttributesList);
       
-      return new Artifact(ArtifactType.codeChangesAttributes, path, path);
+      return new Artifact(ArtifactType.codeChangesAttributes, outputPath, filename);
   }
 
   handleCodeChange(event: vscode.TextDocumentChangeEvent) { //TODO - add file path

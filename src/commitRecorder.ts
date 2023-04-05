@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { GitExtension, API, Repository, Status } from './git';
 import { Util } from './util';
 import { exec } from 'child_process';
 import * as consts from './consts';
@@ -12,9 +11,12 @@ export class CommitRecorder {
      * post-condition: the current workspace is an empty git repository
      */
     async init() {        
-        const workspacePath = Util.getWorkspacePath();
-        const output = await Util.exec_git_command('status');
-        
+        await this.verifyRepoState();
+        await Util.exec_git_command('checkout -b autocommit');
+    }
+
+    async verifyRepoState() {
+        const output = await Util.exec_git_command('status');        
         switch (output) {
             case consts.GIT_STATUS_OUTPUT_NO_COMMITS:
                 break;  //OK
@@ -22,6 +24,7 @@ export class CommitRecorder {
                 throw new Error("have to be empty git repo. other states are not implemented");               
         }
     }
+
 
     start() {
         this.isRecording = true;
@@ -57,10 +60,9 @@ export class CommitRecorder {
         }
     }
 
-    async push(remoteUri: string) {        
-        const gitPushOutput = await Util.exec_git_command(`push -f ${remoteUri}`);
+    async push(remoteUri: string, targetBranch: string) {        
+        const gitPushOutput = await Util.exec_git_command(`push -f --set-upstream ${remoteUri} ${targetBranch}`);
         logger.debug(`output from git push: ${gitPushOutput}`);
-
     }
 
 }

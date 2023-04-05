@@ -107,17 +107,14 @@ export async function activate(context: vscode.ExtensionContext) {
       if (autocommitJob !== undefined) {
         autocommitJob.stop();
       }
-      commitRecorder.stop()
-      
+
       codeChangeRecorder.stop();
       commitRecorder.stop()
 
       const choice0 = await vscode.window.showInformationMessage(`Livecode Recording Finished Succesfully`, 'OK', 'Delete');
       switch (choice0) {
         case 'OK': {          
-          const givenLivecodeName =
-          
-          await vscode.window.showInputBox({ placeHolder: 'Livecode Name' });
+          const givenLivecodeName = await vscode.window.showInputBox({ placeHolder: 'Livecode Name' });
           const { livecodeId, remote_uri, autocommit_branch, livecodeName } = await createLiveCode(givenLivecodeName);
           const ccnga = await codeChangeRecorder.output(livecodeId);
           
@@ -126,7 +123,7 @@ export async function activate(context: vscode.ExtensionContext) {
           const artifacts = [video];      
           artifacts.push(ccnga);
 
-          commitRecorder.push(remote_uri);
+          commitRecorder.push(remote_uri, autocommit_branch);
           await uploader.upload(livecodeId, livecodeName, artifacts);          
           break;
         };
@@ -179,4 +176,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
 
   initializeLiveShare();
+
+  return context;
 }

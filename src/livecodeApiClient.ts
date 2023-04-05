@@ -2,12 +2,14 @@ import { Config } from './config';
 import { logger } from './logger';
 import axios from 'axios';
 
-export async function createLiveCode(name?: string) : 
-  Promise<{ livecodeId: string; remote_uri: string; autocommit_branch: string; livecodeName: string; }> {
-    let livecodeId: string, remote_uri: string, autocommit_branch: string , livecodeName: string;
+export async function createLiveCode(name?: string) {
+    let livecodeId = "";
+    let remote_uri = "";
+    let autocommit_branch = ""; 
+    let livecodeName = ""; 
     const url = `${Config.getLivecodeBEUrl()}/livecodes/`;    
     const payload = name? {"name": name} : {};
-    const token = await Config.getLivecodeToken();
+    const token = await Config.getLivecodeToken();    
     await axios
       .post(url, payload, {
         headers: {
@@ -19,10 +21,11 @@ export async function createLiveCode(name?: string) :
           livecodeId = response.data.id;
           livecodeName = response.data.id;
           remote_uri = response.data.git.remote_uri;
-          autocommit_branch = response.data.git.autocommit_branch;
-          return {livecodeId: livecodeId, remote_uri: remote_uri, autocommit_branch: autocommit_branch, livecodeName: livecodeName};
+          autocommit_branch = response.data.git.autocommit_branch;          
+        } else {
+          throw new Error(`Failed to create livecode`);
         }
       })
-
-    throw new Error('Failed to create Livecode');            
+    
+      return { livecodeId, remote_uri, autocommit_branch, livecodeName };
   }

@@ -14,7 +14,7 @@
         "--extensionDevelopmentPath=${workspaceRoot}",
         "${workspaceRoot}/../travetto/module/rest-express",
         "--folder-uri",
-        "/home/dw/git_tests/test3",
+        "${workspaceRoot}/../test_workspace",
       ],
       "outFiles": [
 				"${workspaceFolder}/out/**/*.js"
@@ -43,7 +43,9 @@
       "args": [
         "--extensionDevelopmentPath=${workspaceRoot}",        
         "--extensionTestsPath=${workspaceFolder}/out/test/suite/index",
-        "${workspaceRoot}/../travetto/module/rest-express"
+        "${workspaceRoot}/../travetto/module/rest-express",
+        "--folder-uri",
+        "${workspaceRoot}/../test_workspace",
       ],    
       "outFiles": [
         "${workspaceRoot}/out/test/**/*.js"
@@ -54,6 +56,66 @@
       },  
       "sourceMaps": true,
       
+      "preLaunchTask": "npm",
+      "skipFiles": [
+        "<node_internals>/**",
+        "**/@travetto/context/**/*",
+        "**/@travetto/base/**/stacktrace.*",
+        "**/@travetto/compiler/**/proxy.*",
+        "**/node_modules/cls-hooked/**/*",
+        "**/node_modules/trace/**/*",
+        "**/node_modules/stack-chain/**/*"
+      ]
+    },
+    {
+      "name": "Launch Autocommit test",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceRoot}",        
+        "--extensionTestsPath=${workspaceFolder}/out/test/suite/commitRecorder.runner",      
+        "--folder-uri",
+        "${workspaceRoot}/../test_workspace",                
+      ], 
+      "outFiles": [
+        "${workspaceRoot}/out/test/**/*.js"
+      ],
+      "env": {
+        "DEBUG": "1",
+        "NODE_PRESERVE_SYMLINKS": "1"
+      },  
+      "sourceMaps": true,      
+      "preLaunchTask": "npm",
+      "skipFiles": [
+        "<node_internals>/**",
+        "**/@travetto/context/**/*",
+        "**/@travetto/base/**/stacktrace.*",
+        "**/@travetto/compiler/**/proxy.*",
+        "**/node_modules/cls-hooked/**/*",
+        "**/node_modules/trace/**/*",
+        "**/node_modules/stack-chain/**/*"
+      ]
+    },
+    {
+      "name": "Launch Livecode API test",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceRoot}",        
+        "--extensionTestsPath=${workspaceFolder}/out/test/suite/livecodeApi.runner",      
+        "--folder-uri",
+        "${workspaceRoot}/../test_workspace",                
+      ], 
+      "outFiles": [
+        "${workspaceRoot}/out/test/**/*.js"
+      ],
+      "env": {
+        "DEBUG": "1",
+        "NODE_PRESERVE_SYMLINKS": "1"
+      },  
+      "sourceMaps": true,      
       "preLaunchTask": "npm",
       "skipFiles": [
         "<node_internals>/**",

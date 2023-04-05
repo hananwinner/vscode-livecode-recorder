@@ -14,6 +14,9 @@ import { createLiveCode } from '../../livecodeApiClient';
 suite('Extension Test Suite', () => {
 	vscode.window.showInformationMessage('Start all tests.');
 
+	
+
+
 	test('create live code', async () => {
 		const givenLivecodeName = "test1";
 		const { livecodeId, remote_uri, autocommit_branch, livecodeName } = await createLiveCode(givenLivecodeName);
