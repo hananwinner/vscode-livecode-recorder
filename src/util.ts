@@ -67,4 +67,8 @@ export class Util {
     logger.debug(`fullCommand: ${_command}`);
     return this.tryCommand(_command);
   }
+
+  static throwsExression(message? :string) {
+    return (() => {throw new Error(message);})();
+  }
 }

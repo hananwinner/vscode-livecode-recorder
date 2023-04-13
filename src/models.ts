@@ -32,6 +32,7 @@ import { CodeChangeType } from './enums';
 
 export class CodeChangeAttributes {
     constructor(public time: number,
+        public file: string,
         public textLength: number,
         public type : string,
         public startLine : number,

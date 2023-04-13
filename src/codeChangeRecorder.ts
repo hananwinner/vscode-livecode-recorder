@@ -9,6 +9,7 @@ import { createObjectCsvWriter } from 'csv-writer';
 import * as fs from 'fs';
 import * as os from 'os';
 import path = require('path');
+import { Util } from './util';
 
 
 export class CodeChangeRecorder {
@@ -28,8 +29,9 @@ export class CodeChangeRecorder {
   }
 
   async output(livecode_id: string) : Promise<Artifact>{
-    const header = [
+    const header = [      
         { id: 'time', title: 'time' },
+        { id: 'file', title: 'file' },
         { id: 'textLength', title: 'textLength' },
         { id: 'type', title: 'type' },
         { id: 'startLine', title: 'startLine' },
@@ -49,10 +51,13 @@ export class CodeChangeRecorder {
       return new Artifact(ArtifactType.codeChangesAttributes, outputPath, filename);
   }
 
+  
+
   handleCodeChange(event: vscode.TextDocumentChangeEvent) { //TODO - add file path
     if (this.isRecording) {
-        event.contentChanges.forEach(change => {		
-            // logger.debug(`Change`);			
+        if (event.document.fileName.endsWith('.git')) return;
+
+        event.contentChanges.forEach(change => {		            
             const numEventChanges = event.contentChanges.length;
             const eventReason = event.reason?.toString();
             const rangeLength = change.rangeLength;
@@ -67,8 +72,13 @@ export class CodeChangeRecorder {
             //codeChangeAttributes
             const uuid = uuidv4();
             const timestamp = new Date().getTime();					
+            const relPath = path.relative(
+              Util.getWorkspacePath() || 
+              Util.throwsExression("unsopputed state: code change when no workspace")
+              , event.document.fileName);
             const codeChangeAttributes  = new CodeChangeAttributes(
                 timestamp, 
+                relPath,
                 text.length,
                 changeType,
                 change.range.start.line,

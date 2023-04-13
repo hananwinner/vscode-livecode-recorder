@@ -4,25 +4,22 @@ import * as FormData from 'form-data';
 import { Artifact, ArtifactUploadProperties } from "./models";
 // import { Config } from './config';
 import { logger } from './logger';
+import { Config } from './config';
 
 export class ArtifactUploader {
 
     public async upload(livecodeId: string, livecodeName: string, artifacts: Artifact[]) : Promise<void> {
         for (const a of artifacts) {
-            const {destUrl, fields} = await this.getUploadUri(livecodeId, a.type, a.filename);
+            const {destUrl, fields} = await this.getUploadUri(livecodeId, a.type);
             await this.uploadFile(a.path, destUrl, fields);
         }
 
     }
 
-    private async getUploadUri(livecodeId: string, artifactType: string, filename: string) : Promise<ArtifactUploadProperties>
+    private async getUploadUri(livecodeId: string, artifactType: string) : Promise<ArtifactUploadProperties>
     {
-        const url  = `http://localhost:8000/livecodes/${livecodeId}/artifacts/${artifactType}/generate_presigned_url`
-        const payload = {
-          filename: filename
-        };
-        const response = await axios.post(url, payload);
-        
+        const url  = `${Config.getLivecodeBEUrl()}/livecodes/${livecodeId}/artifacts/${artifactType}/generate_presigned_url`       
+        const response = await axios.post(url);        
         if (response.status === 200) {
             return new ArtifactUploadProperties(response.data.url, response.data.fields);
         } else {
